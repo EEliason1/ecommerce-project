@@ -1,0 +1,62 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE and editor configurations
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# System files
+Thumbs.db
+desktop.ini
+
+# Docker
+**/Dockerfile.*
+**/docker-compose.yml
+
+# Kubernetes
+**/*.yaml
+!deployment/kubernetes/*.yaml # Except manifests in deployment/kubernetes
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Draw.io/Diagrams.net temporary files
+**/architecture/*.tmp
+**/architecture/*.bak
+
+# Monitoring and analytics
+prometheus-config.yaml
+grafana-dashboards/
+
+# Miscellaneous
+*.bak
+*.tmp
+*.swp
+
+# Ignore macOS-specific system files
+.AppleDouble
+.LSOverride
