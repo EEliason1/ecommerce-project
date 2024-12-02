@@ -1,10 +1,10 @@
-import React, { createContext, useState, useContext, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface UserContextType {
   username: string | null;
   token: string | null;
   login: (username: string, token: string) => void;
-  logout: (navigate: (path: string) => void) => void;
+  logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -22,12 +22,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem("token", token);
   };
 
-  const logout = (navigate: (path: string) => void) => {
+  const logout = () => {
     setUsername(null);
     setToken(null);
     localStorage.removeItem("username");
     localStorage.removeItem("token");
-    navigate("/login");
   };
 
   return (
