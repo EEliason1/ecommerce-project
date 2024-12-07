@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { User } from "../models/User";
 import { JWT_SECRET } from "../utils/jwtUtils";
 import { body, validationResult } from "express-validator";
 
 const authRouter = Router();
-const users: { username: string; password: string }[] = [];
 
 // Signup
 authRouter.post(
@@ -22,14 +22,20 @@ authRouter.post(
 
     const { username, password } = req.body;
 
-    if (users.find((user) => user.username === username)) {
-      return res.status(400).json({ message: "Username already exists" });
+    try {
+      const existingUser = await User.findOne({ username });
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const user = new User({ username, password: hashedPassword });
+      await user.save();
+
+      res.status(201).json({ message: "User registered successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
     }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-    users.push({ username, password: hashedPassword });
-
-    res.status(201).json({ message: "User registered successfully" });
   }
 );
 
@@ -48,18 +54,22 @@ authRouter.post(
 
     const { username, password } = req.body;
 
-    const user = users.find((user) => user.username === username);
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    try {
+      const user = await User.findOne({ username });
+      if (!user) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
 
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token });
+      const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "1h" });
+      res.json({ token });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
 );
 

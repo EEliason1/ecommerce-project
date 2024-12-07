@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import cors from "cors";
+import { connectDB } from "./utils/mongo";
 import { rateLimiter } from "./middleware/rateLimiter";
 import { errorHandler } from "./middleware/errorHandler";
 import { productsRouter } from "./routes/products";
@@ -10,20 +11,22 @@ import { cartRouter } from "./routes/cart";
 import { logger } from "./utils/logger";
 
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Connect to MongoDB
+connectDB();
+
 // Middleware
-app.use(helmet()); // Security headers
+app.use(helmet());
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
-); // CORS policy
-app.use(rateLimiter); // Rate limiting
+);
+app.use(rateLimiter);
 app.use(express.json());
 
 // Routes

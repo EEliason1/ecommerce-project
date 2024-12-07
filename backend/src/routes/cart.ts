@@ -1,44 +1,38 @@
-import { Router, Response } from "express";
+import { Router } from "express";
 import { verifyToken } from "../middleware/authMiddleware";
+import { User } from "../models/User";
+import { Product } from "../models/Product";
 import { AuthenticatedRequest } from "../types";
-import { prisma } from "../utils/prisma";
-import { CartItem } from "../types";
+import mongoose from "mongoose";
 
 const cartRouter = Router();
 
 // Get Cart Items
-cartRouter.get("/", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+cartRouter.get("/", verifyToken, async (req: AuthenticatedRequest, res) => {
   const username = req.user?.username;
 
   if (!username) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized: No user found." });
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { username },
-      include: {
-        CartItem: {
-          include: {
-            Product: true,
-          },
-        },
-      },
-    });
-
+    const user = await User.findOne({ username }).populate("cart.productId");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Explicitly type item
-    const cartItems = user.CartItem.map((item: CartItem & { Product: { name: string; price: number } }) => ({
-      id: item.id,
-      productId: item.productId,
-      userId: item.userId,
-      quantity: item.quantity,
-      productName: item.Product.name,
-      productPrice: item.Product.price,
-    }));
+    const cartItems = user.cart.map((item) => {
+      if (item.productId instanceof mongoose.Types.ObjectId) {
+        throw new Error("Product not fully populated");
+      }
+
+      return {
+        productId: item.productId._id,
+        productName: item.productId.name,
+        productPrice: item.productId.price,
+        quantity: item.quantity,
+      };
+    });
 
     res.json(cartItems);
   } catch (error) {
@@ -49,12 +43,12 @@ cartRouter.get("/", verifyToken, async (req: AuthenticatedRequest, res: Response
 
 
 // Add to Cart
-cartRouter.post("/", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+cartRouter.post("/", verifyToken, async (req: AuthenticatedRequest, res) => {
   const username = req.user?.username;
   const { productId, quantity } = req.body;
 
   if (!username) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized: No user found." });
   }
 
   if (!productId || !quantity || quantity <= 0) {
@@ -62,34 +56,26 @@ cartRouter.post("/", verifyToken, async (req: AuthenticatedRequest, res: Respons
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { username } });
+    const user = await User.findOne({ username });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const existingItem = await prisma.cartItem.findFirst({
-      where: { userId: user.id, productId },
-    });
-
-    if (existingItem) {
-      await prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity },
-      });
+    const cartItem = user.cart.find((item) => item.productId.equals(productId));
+    if (cartItem) {
+      cartItem.quantity += quantity;
     } else {
-      await prisma.cartItem.create({
-        data: { userId: user.id, productId, quantity },
-      });
+      user.cart.push({ productId, quantity });
     }
 
+    await user.save();
     res.status(201).json({ message: "Item added to cart." });
   } catch (error) {
-    console.error("Error adding to cart:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });

@@ -19,6 +19,6 @@ export const verifyToken = (
     req.user = { username: decoded.username };
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Unauthorized: Invalid or expired token" });
+    res.status(401).json({ message: "Unauthorized: Invalid token" });
   }
 };
