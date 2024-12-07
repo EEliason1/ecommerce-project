@@ -30,7 +30,7 @@ const Login: React.FC = () => {
 
       const { token } = await response.json();
       login(usernameInput, token); // Save to context
-      navigate("/cart");
+      navigate("/");
     } catch (err) {
       setError((err as Error).message);
     }
