@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useUser } from "../contexts/UserContext";
 
 const Login: React.FC = () => {
@@ -62,6 +62,14 @@ const Login: React.FC = () => {
           Login
         </button>
       </form>
+      <div className="mt-4">
+        <p>
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-green-forest hover:underline">
+            Sign up here
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };
