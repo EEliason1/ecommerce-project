@@ -1,36 +1,59 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useState, useContext, ReactNode } from "react";
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
 
 interface UserContextType {
-  username: string | null;
-  token: string | null;
-  login: (username: string, token: string) => void;
-  logout: () => void;
+  cart: CartItem[];
+  addToCart: (item: CartItem) => void;
+  updateCartItem: (itemId: string, quantity: number) => void;
+  removeFromCart: (itemId: string) => void;
+  clearCart: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [username, setUsername] = useState<string | null>(
-    localStorage.getItem("username")
-  );
-  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [cart, setCart] = useState<CartItem[]>([]);
 
-  const login = (username: string, token: string) => {
-    setUsername(username);
-    setToken(token);
-    localStorage.setItem("username", username);
-    localStorage.setItem("token", token);
+  const addToCart = (item: CartItem) => {
+    setCart((prev) => {
+      const existingItem = prev.find((cartItem) => cartItem.id === item.id);
+      if (existingItem) {
+        return prev.map((cartItem) =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+            : cartItem
+        );
+      }
+      return [...prev, item];
+    });
   };
 
-  const logout = () => {
-    setUsername(null);
-    setToken(null);
-    localStorage.removeItem("username");
-    localStorage.removeItem("token");
+  const updateCartItem = (itemId: string, quantity: number) => {
+    setCart((prev) =>
+      prev.map((cartItem) =>
+        cartItem.id === itemId ? { ...cartItem, quantity } : cartItem
+      )
+    );
+  };
+
+  const removeFromCart = (itemId: string) => {
+    setCart((prev) => prev.filter((cartItem) => cartItem.id !== itemId));
+  };
+
+  const clearCart = () => {
+    setCart([]);
   };
 
   return (
-    <UserContext.Provider value={{ username, token, login, logout }}>
+    <UserContext.Provider
+      value={{ cart, addToCart, updateCartItem, removeFromCart, clearCart }}
+    >
       {children}
     </UserContext.Provider>
   );

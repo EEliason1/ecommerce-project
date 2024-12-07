@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "../contexts/UserContext";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { fetchWithAuth } from "../utils/api";
+import LoadingSpinner from "../components/Spinner";
+import { fetchWithAuth } from "../helpers/api";
 
 interface CartItem {
   productId: string;

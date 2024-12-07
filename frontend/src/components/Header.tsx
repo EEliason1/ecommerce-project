@@ -1,51 +1,42 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useUser } from "../contexts/UserContext";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Header: React.FC = () => {
-  const { username, logout } = useUser();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const { user, logout } = useAuth();
 
   return (
-    <header className="bg-gradient-to-r from-green-forest to-green-light text-white p-4">
+    <header className="bg-green-700 text-white p-4">
       <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-2xl font-bold">
-          <Link to="/">E-Commerce</Link>
-        </h1>
-        <nav className="space-x-6">
-          <Link to="/" className="hover:text-black">
-            Home
-          </Link>
-          <Link to="/products" className="hover:text-black">
+        <Link to="/" className="text-xl font-bold">
+          E-Commerce Store
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link to="/products" className="hover:underline">
             Products
           </Link>
-          <Link to="/cart" className="hover:text-black">
+          <Link to="/cart" className="hover:underline">
             Cart
           </Link>
-        </nav>
-        <div>
-          {username ? (
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-light">Welcome, {username}</span>
+          {user ? (
+            <>
+              <span>Welcome, {user.username}</span>
               <button
-                onClick={handleLogout}
-                className="bg-black hover:bg-gray-accent text-white px-4 py-2 rounded"
+                onClick={logout}
+                className="bg-red-500 px-4 py-2 rounded hover:bg-red-600"
               >
                 Logout
               </button>
-            </div>
+            </>
           ) : (
-            <Link
-              to="/login"
-              className="bg-black hover:bg-gray-accent text-white px-4 py-2 rounded"
-            >
-              Login
-            </Link>
+            <>
+              <Link to="/login" className="hover:underline">
+                Login
+              </Link>
+              <Link to="/signup" className="hover:underline">
+                Signup
+              </Link>
+            </>
           )}
         </div>
       </div>

@@ -1,66 +1,42 @@
-import React, { useState } from "react";
-import { fetchWithAuth } from "../utils/api";
+import React from "react";
 
 interface Product {
   _id: string;
   name: string;
   description: string;
   price: number;
+  category: string;
 }
 
-const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  const [quantity, setQuantity] = useState(1);
+interface ProductCardProps {
+  product: Product;
+  onAddToCart: (product: Product) => void;
+  onProductClick: (product: Product) => void;
+}
 
-  const handleAddToCart = async () => {
-    try {
-      const payload = { productId: product._id, quantity };
-      console.log("Sending payload:", payload);
-
-      await fetchWithAuth("/api/cart", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      console.log("Product added to cart!");
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      } else {
-        console.log("Failed to add product to cart.");
-      }
-    }
-  };
-
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onAddToCart,
+  onProductClick,
+}) => {
   return (
-    <div className="bg-white border rounded-lg shadow p-4">
-      <h3 className="text-lg font-bold">{product.name}</h3>
-      <p className="text-gray-600">{product.description}</p>
-      <p className="text-green-700 font-bold mt-2">
-        ${product.price.toFixed(2)}
-      </p>
-      <div className="flex justify-between">
-        <div className="flex items-center mt-4 space-x-4">
-          <button
-            onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-            className="bg-gray-300 px-3 py-1 rounded"
-          >
-            -
-          </button>
-          <span className="text-lg">{quantity}</span>
-          <button
-            onClick={() => setQuantity((prev) => prev + 1)}
-            className="bg-gray-300 px-3 py-1 rounded"
-          >
-            +
-          </button>
-        </div>
-        <button
-          onClick={handleAddToCart}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mt-4"
-        >
-          Add to Cart
-        </button>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-200">
+      <div
+        onClick={() => onProductClick(product)}
+        className="cursor-pointer"
+      >
+        <h3 className="text-lg font-bold text-green-800 mb-2">{product.name}</h3>
+        <p className="text-sm text-gray-600 mb-4">{product.description}</p>
+        <p className="text-green-600 font-semibold text-lg">
+          ${product.price.toFixed(2)}
+        </p>
       </div>
+      <button
+        onClick={() => onAddToCart(product)}
+        className="mt-4 w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition-colors duration-200"
+      >
+        Add to Cart
+      </button>
     </div>
   );
 };

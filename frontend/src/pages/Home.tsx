@@ -1,18 +1,23 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import Button from "../components/Button";
 
 const Home: React.FC = () => {
   return (
-    <div className="bg-gradient-to-br from-green-forest via-green-light to-gray-accent text-white text-center p-10">
-      <h1 className="text-5xl font-bold mb-4">Welcome to Crafts by Jay!</h1>
-      <p className="text-xl mb-8">
-        Explore amazing products and enjoy the best shopping experience.
+    <div className="container mx-auto p-8">
+      <h1 className="text-4xl font-bold text-center text-green-800 mb-6">
+        Welcome to Our E-Commerce Store
+      </h1>
+      <p className="text-center text-lg mb-8">
+        Explore our wide range of products at unbeatable prices!
       </p>
-      <Link to="/products">
-        <button className="bg-gradient-to-r from-green-light to-green-forest hover:from-green-forest hover:to-green-light text-white px-6 py-3 rounded shadow-lg">
-          Browse Products
-        </button>
-      </Link>
+      <div className="flex justify-center">
+        <Button
+          label="Browse Products"
+          onClick={() => {
+            window.location.href = "/products";
+          }}
+        />
+      </div>
     </div>
   );
 };
