@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { fetchWithAuth } from "../utils/api";
 
 interface Product {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   price: number;
@@ -13,7 +13,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
 
   const handleAddToCart = async () => {
     try {
-      const payload = { productId: product.id, quantity };
+      const payload = { productId: product._id, quantity };
       console.log("Sending payload:", payload);
 
       await fetchWithAuth("/api/cart", {
