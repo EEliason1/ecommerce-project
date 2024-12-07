@@ -6,6 +6,11 @@ const Header: React.FC = () => {
   const { username, logout } = useUser();
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   return (
     <header className="bg-gradient-to-r from-green-forest to-green-light text-white p-4">
       <div className="container mx-auto flex justify-between items-center">
@@ -28,7 +33,7 @@ const Header: React.FC = () => {
             <div className="flex items-center space-x-4">
               <span className="text-gray-light">Welcome, {username}</span>
               <button
-                onClick={() => logout(navigate)}
+                onClick={handleLogout}
                 className="bg-black hover:bg-gray-accent text-white px-4 py-2 rounded"
               >
                 Logout

@@ -1,56 +1,66 @@
-import React from "react";
-import { useUser } from "../contexts/UserContext";
+import React, { useState } from "react";
+import { fetchWithAuth } from "../utils/api";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
+  description: string;
   price: number;
-  description?: string;
 }
 
 const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  const { token, username } = useUser();
+  const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = async () => {
-    if (!token || !username) {
-      alert("Please log in to add items to your cart.");
-      return;
-    }
-
     try {
-      const response = await fetch(`/api/cart`, {
+      const payload = { productId: product.id, quantity };
+      console.log("Sending payload:", payload);
+
+      await fetchWithAuth("/api/cart", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Failed to add to cart: ${errorData.message}`);
-        return;
+      console.log("Product added to cart!");
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      } else {
+        console.log("Failed to add product to cart.");
       }
-
-      alert(`${product.name} has been added to your cart!`);
-    } catch (err) {
-      console.error("Error adding to cart:", err);
-      alert("An error occurred. Please try again.");
     }
   };
 
   return (
-    <div className="bg-gray-100 border rounded-lg shadow-md p-4">
-      <h3 className="text-xl font-bold">{product.name}</h3>
-      <p className="mt-2">{product.description}</p>
-      <p className="mt-4 text-lg font-semibold">Price: ${product.price.toFixed(2)}</p>
-      <button
-        onClick={handleAddToCart}
-        className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-      >
-        Add to Cart
-      </button>
+    <div className="bg-white border rounded-lg shadow p-4">
+      <h3 className="text-lg font-bold">{product.name}</h3>
+      <p className="text-gray-600">{product.description}</p>
+      <p className="text-green-700 font-bold mt-2">
+        ${product.price.toFixed(2)}
+      </p>
+      <div className="flex justify-between">
+        <div className="flex items-center mt-4 space-x-4">
+          <button
+            onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+            className="bg-gray-300 px-3 py-1 rounded"
+          >
+            -
+          </button>
+          <span className="text-lg">{quantity}</span>
+          <button
+            onClick={() => setQuantity((prev) => prev + 1)}
+            className="bg-gray-300 px-3 py-1 rounded"
+          >
+            +
+          </button>
+        </div>
+        <button
+          onClick={handleAddToCart}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mt-4"
+        >
+          Add to Cart
+        </button>
+      </div>
     </div>
   );
 };

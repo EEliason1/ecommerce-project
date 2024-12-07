@@ -1,68 +1,151 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "../contexts/UserContext";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { fetchWithAuth } from "../utils/api";
 
 interface CartItem {
-  productId: number;
-  quantity: number;
+  productId: string;
   productName: string;
   productPrice: number;
+  quantity: number;
 }
 
 const Cart: React.FC = () => {
-  const { username, token } = useUser();
-  const [cart, setCart] = useState<CartItem[] | null>(null);
+  const { token, username } = useUser();
+  const [cartItems, setCartItems] = useState<CartItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [newQuantity, setNewQuantity] = useState<number>(1);
 
-  useEffect(() => {
-    const fetchCart = async () => {
-      if (!username || !token) {
-        setError("User is not logged in.");
+  const fetchCart = async () => {
+    if (!token || !username) {
+      setError("User is not logged in.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/cart", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.message || "Failed to fetch cart items.");
         return;
       }
 
-      try {
-        const response = await fetch(`/api/cart?username=${username}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const data = await response.json();
+      setCartItems(data);
+    } catch (err) {
+      setError("An error occurred while fetching the cart.");
+    }
+  };
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          setError(errorData.message || "Failed to fetch cart.");
-          return;
-        }
-
-        const data = await response.json();
-        setCart(data);
-      } catch (err) {
-        setError((err as Error).message);
+  const handleDelete = async (productId: string) => {
+    try {
+      await fetchWithAuth("/api/cart", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      console.log("Item removed from cart.");
+      fetchCart(); // Refresh cart items
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      } else {
+        console.log("Failed to delete item from cart.");
       }
-    };
+    }
+  };
 
+  const handleEdit = async (productId: string) => {
+    try {
+      await fetchWithAuth("/api/cart", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, quantity: newQuantity }),
+      });
+      console.log("Cart item updated.");
+      fetchCart(); // Refresh cart items
+      setEditingProductId(null);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      } else {
+        console.log("Failed to update cart item.");
+      }
+    }
+  };
+
+  useEffect(() => {
     fetchCart();
-  }, [username, token]);
+  }, [token, username]);
 
   if (error) {
     return <p className="text-red-600">{error}</p>;
   }
 
-  if (cart === null) {
-    return <p>Loading...</p>;
+  if (cartItems === null) {
+    return <LoadingSpinner />;
   }
 
   return (
-    <div className="container mx-auto p-10">
-      <h1 className="text-2xl font-bold">Your Cart</h1>
-      <ul className="mt-6 space-y-4">
-        {cart.map((item) => (
+    <div className="container mx-auto p-8">
+      <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
+      <ul className="space-y-4">
+        {cartItems.map((item) => (
           <li
             key={item.productId}
-            className="flex justify-between bg-gray-100 shadow p-4 rounded"
+            className="flex justify-between items-center bg-gray-100 shadow p-4 rounded"
           >
-            <span>{item.productName}</span>
-            <span>Quantity: {item.quantity}</span>
-            <span>Price: ${(item.productPrice * item.quantity).toFixed(2)}</span>
+            <span className="flex-1 text-left">{item.productName}</span>
+            {editingProductId === item.productId ? (
+              <div className="flex items-center space-x-2 flex-1 justify-center">
+                <input
+                  type="number"
+                  value={newQuantity}
+                  onChange={(e) => setNewQuantity(Number(e.target.value))}
+                  min="1"
+                  className="w-16 text-center border rounded"
+                />
+                <button
+                  onClick={() => handleEdit(item.productId)}
+                  className="bg-green-500 hover:bg-green-600 text-white p-2 rounded"
+                >
+                  ✔
+                </button>
+                <button
+                  onClick={() => setEditingProductId(null)}
+                  className="bg-red-500 hover:bg-red-600 text-white p-2 rounded"
+                >
+                  ✖
+                </button>
+              </div>
+            ) : (
+              <>
+                <span className="flex-1 text-center">
+                  Quantity: {item.quantity}
+                </span>
+                <span className="flex-1 text-right">
+                  ${(item.productPrice * item.quantity).toFixed(2)}
+                </span>
+                <div className="flex space-x-4 ml-8">
+                  <button
+                    onClick={() => setEditingProductId(item.productId)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.productId)}
+                    className="bg-red-600 hover:bg-red-700 text-white p-2 rounded"
+                  >
+                    🗑
+                  </button>
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>

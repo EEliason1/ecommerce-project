@@ -3,11 +3,10 @@ import { verifyToken } from "../middleware/authMiddleware";
 import { User } from "../models/User";
 import { Product } from "../models/Product";
 import { AuthenticatedRequest } from "../types";
-import mongoose from "mongoose";
 
 const cartRouter = Router();
 
-// Get Cart Items
+// GET Cart Items
 cartRouter.get("/", verifyToken, async (req: AuthenticatedRequest, res) => {
   const username = req.user?.username;
 
@@ -21,42 +20,23 @@ cartRouter.get("/", verifyToken, async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const cartItems = user.cart.map((item) => {
-      if (item.productId instanceof mongoose.Types.ObjectId) {
-        throw new Error("Product not fully populated");
-      }
-
-      return {
-        productId: item.productId._id,
-        productName: item.productId.name,
-        productPrice: item.productId.price,
-        quantity: item.quantity,
-      };
-    });
-
-    res.json(cartItems);
+    res.json(user.getCartItems());
   } catch (error) {
     console.error("Error fetching cart:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-
-// Add to Cart
+// POST Add to Cart
 cartRouter.post("/", verifyToken, async (req: AuthenticatedRequest, res) => {
-  const username = req.user?.username;
   const { productId, quantity } = req.body;
-
-  if (!username) {
-    return res.status(401).json({ message: "Unauthorized: No user found." });
-  }
 
   if (!productId || !quantity || quantity <= 0) {
     return res.status(400).json({ message: "Product ID and quantity are required." });
   }
 
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username: req.user?.username });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -76,7 +56,61 @@ cartRouter.post("/", verifyToken, async (req: AuthenticatedRequest, res) => {
     await user.save();
     res.status(201).json({ message: "Item added to cart." });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error adding to cart:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+// PUT Update Cart Item
+cartRouter.put("/", verifyToken, async (req: AuthenticatedRequest, res) => {
+  const { productId, quantity } = req.body;
+
+  if (!productId || !quantity || quantity <= 0) {
+    return res.status(400).json({ message: "Product ID and quantity are required." });
+  }
+
+  try {
+    const user = await User.findOne({ username: req.user?.username });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const cartItem = user.cart.find((item) => item.productId.equals(productId));
+    if (!cartItem) {
+      return res.status(404).json({ message: "Cart item not found." });
+    }
+
+    cartItem.quantity = quantity;
+    await user.save();
+
+    res.status(200).json({ message: "Cart item updated successfully." });
+  } catch (error) {
+    console.error("Error updating cart item:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
+// DELETE Remove Cart Item
+cartRouter.delete("/", verifyToken, async (req: AuthenticatedRequest, res) => {
+  const { productId } = req.body;
+
+  if (!productId) {
+    return res.status(400).json({ message: "Product ID is required." });
+  }
+
+  try {
+    const user = await User.findOne({ username: req.user?.username });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    user.cart = user.cart.filter((item) => !item.productId.equals(productId));
+    await user.save();
+
+    res.status(200).json({ message: "Item removed from cart." });
+  } catch (error) {
+    console.error("Error deleting item from cart:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 });
 
